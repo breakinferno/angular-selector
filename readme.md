@@ -15,7 +15,7 @@
     filterFunc: '@?',       // 过滤函数
     searchValue: '@?',      // 搜索框值
     bindAttr: '=?',         // 绑定属性值
-    debounce: '@?',         // 节流
+    debounce: '@?',         // 防抖
     onChange: '&?',         // 更改时回调
     onSelect: '&?',         // 选择时回调
     totalData:     '=?',    // 全部数据
