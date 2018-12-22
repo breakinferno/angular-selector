@@ -1,60 +1,75 @@
 'use strict';
-
+import angular from 'angular';
 /**
  * 下拉框优化
  * @author luffylv
  * @description 增加blur，增加键盘响应，增加自定义模板，增加对分组的支持，增加数据对promise的处理
  */
 
- /**
-  * sample:
-  *   Javascript:
-  *     $scope.totalData = [
-        {'ID':'1', 'TIPIS':'GroupName1', 'DESC':'name'},
-        {'ID':'2', 'TIPIS':'GroupName1', 'DESC':'name1'},
-        {'ID':'3', 'TIPIS':'GroupName2', 'DESC':'name2'},
-        {'ID':'4', 'TIPIS':'GroupName1', 'DESC':'name3'},
-    ];
-      HTML
-        <div selector-plus total-data="totalData" group-attr="TIPIS" label-attr="DESC"></div>
-        <div selector-plus total-data="totalData" debounce="10" label-attr="DESC" type="select" keep="1"></div>
-        <div selector-plus total-data="totalData" placeholder="请选择" debounce="10" label-attr="DESC" disable-search = "true" type="dropdown" search-value="自定义名字"></div>
-        <div selector-plus placeholder="select" type="input"></div>
-  */
+/**
+ * sample:
+ *   Javascript:
+ *     $scope.totalData = [
+       {'ID':'1', 'TIPIS':'GroupName1', 'DESC':'name'},
+       {'ID':'2', 'TIPIS':'GroupName1', 'DESC':'name1'},
+       {'ID':'3', 'TIPIS':'GroupName2', 'DESC':'name2'},
+       {'ID':'4', 'TIPIS':'GroupName1', 'DESC':'name3'},
+   ];
+     HTML
+       <div selector-plus total-data="totalData" group-attr="TIPIS" label-attr="DESC"></div>
+       <div selector-plus total-data="totalData" debounce="10" label-attr="DESC" type="select" keep="1"></div>
+       <div selector-plus total-data="totalData" placeholder="请选择" debounce="10" label-attr="DESC" disable-search = "true" type="dropdown" search-value="自定义名字"></div>
+       <div selector-plus placeholder="select" type="input"></div>
+ */
 
 import './index.css';
 
-const KEYS = { up: 38, down: 40, left: 37, right: 39, escape: 27, enter: 13, backspace: 8, delete: 46, shift: 16, leftCmd: 91, rightCmd: 93, ctrl: 17, alt: 18, tab: 9 };
+const KEYS = {
+    up: 38,
+    down: 40,
+    left: 37,
+    right: 39,
+    escape: 27,
+    enter: 13,
+    backspace: 8,
+    delete: 46,
+    shift: 16,
+    leftCmd: 91,
+    rightCmd: 93,
+    ctrl: 17,
+    alt: 18,
+    tab: 9
+};
 
 const defaults = {
-    type:                   'select',   // 默认类型为选择框（可选input,dropdown, select, dropdown-select)
-    searchValue:            '',         // 搜索内容
-    disable:                false,      // 是否可用, 是则不可用
-    disableSearch:          false,      // 是否允许选择,是则不可过滤，只读
-    showOption:             false,      // 是否显示选择框
-    value:                  null,       // 选择的值
-    highlighted:            0,          // 高亮项
-    totalData:              [],         // 全部数据
-    labelAttr:              null,       // 对象数组时指定哪个属性作为label
-    groupAttr:              null,       // 对象数组时指定哪个属性作为group
-    valueAttr:              null,       // 对象数组时指定哪个属性作为value
-    inputAttr:              null,       // input显示时指定属性作为值
-    options:                [],
-    debounce:               0,          // 节流时间ms
+    type: 'select', // 默认类型为选择框（可选input,dropdown, select, dropdown-select)
+    searchValue: '', // 搜索内容
+    disable: false, // 是否可用, 是则不可用
+    disableSearch: false, // 是否允许选择,是则不可过滤，只读
+    showOption: false, // 是否显示选择框
+    value: null, // 选择的值
+    highlighted: 0, // 高亮项
+    totalData: [], // 全部数据
+    labelAttr: null, // 对象数组时指定哪个属性作为label
+    groupAttr: null, // 对象数组时指定哪个属性作为group
+    valueAttr: null, // 对象数组时指定哪个属性作为value
+    inputAttr: null, // input显示时指定属性作为值
+    options: [],
+    debounce: 0, // 节流时间ms
     css: {
         input: {
             // height:         '30px',     // input高度
             // width:          '400px',    // input宽度
         },
         dropdown: {
-            maxHeight:   '200px',          // 下拉框高度
+            maxHeight: '200px', // 下拉框高度
         }
     },
-    keep:                   2,           // 数据留存行为
-    dropdownItemTemplate:   'selector/item.html', // 下拉项
-    dropdownGroupTemplate:  'selector/group.html', // 下拉组项
-    onChange: ()=>{},
-    onSelect: ()=>{}
+    keep: 2, // 数据留存行为
+    dropdownItemTemplate: 'selector/item.html', // 下拉项
+    dropdownGroupTemplate: 'selector/group.html', // 下拉组项
+    onChange: () => {},
+    onSelect: () => {}
 };
 
 const templates = {
@@ -92,53 +107,53 @@ const templates = {
                         </li>
                     </ul>
                 </div>`,
-    item:   '<span ng-bind="setOptionLabel(option)" ng-class="{\'selector-i\':true, group:groupAttr}"></span>',
-    group:  '<span ng-bind="setOptionGroup(option, index)" ng-class="{\'selector-group-i\': true, group:setOptionGroup(option, index)===\'\'}"></span>'
+    item: '<span ng-bind="setOptionLabel(option)" ng-class="{\'selector-i\':true, group:groupAttr}"></span>',
+    group: '<span ng-bind="setOptionGroup(option, index)" ng-class="{\'selector-group-i\': true, group:setOptionGroup(option, index)===\'\'}"></span>'
 };
 
 // 获取样式
 function getStyles(element) {
     return !(element instanceof HTMLElement) ? {} :
-        element.ownerDocument && element.ownerDocument.defaultView.opener
-            ? element.ownerDocument.defaultView.getComputedStyle(element)
-            : window.getComputedStyle(element);
+        element.ownerDocument && element.ownerDocument.defaultView.opener ?
+        element.ownerDocument.defaultView.getComputedStyle(element) :
+        window.getComputedStyle(element);
 }
 
-export default ['$templateCache', '$timeout', '$q', ($templateCache, $timeout, $q)=>{
+export default ['$templateCache', '$timeout', '$q', ($templateCache, $timeout, $q) => {
     return {
-        restrict:'EA',
+        restrict: 'EA',
         replace: true,
         scope: {
-            require: '=?',          // 是否必须
-            type:    '@?',          // 组件类型
-            inputType: '@?',        // 输入数据类型
-            disable: '@?',          // 是否允许选择
-            disableSearch: '@?',    // 是否允许搜索项
-            placeholder: '@?',      // 占位符
-            filterFunc: '@?',       // 过滤函数
-            searchValue: '@?',      // 搜索框值
-            bindAttr: '=?',         // 绑定属性值
-            debounce: '@?',         // 节流
-            onChange: '&?',         // 更改时回调
-            onSelect: '&?',         // 选择时回调
-            totalData:     '=?',    // 全部数据
-            setOptionLabel: '&?',   // 设置label的显示的数据
-            setOptionGroup: '&?',   // 设置group的显示值
-            setOptionSelect: '&?',  // 设置select值的数据
-            setOptionInput: '&?',   // 设置input数据
-            labelAttr:  '@?',       // label属性
-            valueAttr:  '@?',       // value属性
-            groupAttr:  '@?',       // 组属性
-            inputAttr:  '@?',       // input属性
-            optionHeight: '@?',     // 下拉框高度
-            optionWidth: '@?',      // 下拉框宽度
-            height: '@?',           // input高度
-            width:  '@?',           // input宽度
-            inputStyle: '@?',       // input 样式
-            keep: '@?',             // 重新获取焦点时是否保留数据，0不保留，1保留输入数据，2保留选择数据
-            error: '=?',            // 错误
-            dropdownItemTemplate:   '=?',   // 自定义下拉项模板
-            dropdownGroupTemplate:  '=?'    // 自定义下拉组模板
+            require: '=?', // 是否必须
+            type: '@?', // 组件类型
+            inputType: '@?', // 输入数据类型
+            disable: '@?', // 是否允许选择
+            disableSearch: '@?', // 是否允许搜索项
+            placeholder: '@?', // 占位符
+            filterFunc: '@?', // 过滤函数
+            searchValue: '@?', // 搜索框值
+            bindAttr: '=?', // 绑定属性值
+            debounce: '@?', // 节流
+            onChange: '&?', // 更改时回调
+            onSelect: '&?', // 选择时回调
+            totalData: '=?', // 全部数据
+            setOptionLabel: '&?', // 设置label的显示的数据
+            setOptionGroup: '&?', // 设置group的显示值
+            setOptionSelect: '&?', // 设置select值的数据
+            setOptionInput: '&?', // 设置input数据
+            labelAttr: '@?', // label属性
+            valueAttr: '@?', // value属性
+            groupAttr: '@?', // 组属性
+            inputAttr: '@?', // input属性
+            optionHeight: '@?', // 下拉框高度
+            optionWidth: '@?', // 下拉框宽度
+            height: '@?', // input高度
+            width: '@?', // input宽度
+            inputStyle: '@?', // input 样式
+            keep: '@?', // 重新获取焦点时是否保留数据，0不保留，1保留输入数据，2保留选择数据
+            error: '=?', // 错误
+            dropdownItemTemplate: '=?', // 自定义下拉项模板
+            dropdownGroupTemplate: '=?' // 自定义下拉组模板
         },
         template: templates.selector,
         compile: function compile(tElement, tAttrs, transclude) {
@@ -146,8 +161,7 @@ export default ['$templateCache', '$timeout', '$q', ($templateCache, $timeout, $
                 $templateCache.put(`selector/${template}.html`, templates[template]);
             }
             return {
-                pre : function preLink($scope, iElement, iAttrs, controller) {
-                },
+                pre: function preLink($scope, iElement, iAttrs, controller) {},
                 post: function postLink($scope, iElement, iAttrs, controller) {
 
                     // 初始化
@@ -161,8 +175,7 @@ export default ['$templateCache', '$timeout', '$q', ($templateCache, $timeout, $
                         $scope.$$selector = angular.element(iElement[0]);
                         $scope.$$dropdown = angular.element(iElement[0].getElementsByClassName('selector-dropdown'))[0];
                         // css
-                        $scope.css.input = Object.assign({},
-                            {
+                        $scope.css.input = Object.assign({}, {
                                 height: $scope.height || $scope.css.input.height,
                                 width: $scope.width || $scope.css.input.width
                             },
@@ -280,7 +293,7 @@ export default ['$templateCache', '$timeout', '$q', ($templateCache, $timeout, $
                         if (['undefined', 'null', 'symbol', 'boolean', 'number'].includes(type)) {
                             throw new Error('下拉选项必须为可迭代对象');
                         }
-                        Array.isArray($scope.totalOptions) && ($scope.filteredOptions = target.filter( value => {
+                        Array.isArray($scope.totalOptions) && ($scope.filteredOptions = target.filter(value => {
                             return typeof fn === 'function' && fn.call($scope.totalOptions, value, input);
                         }));
                         if ($scope.filteredOptions && $scope.filteredOptions.length !== 0) {
@@ -340,7 +353,7 @@ export default ['$templateCache', '$timeout', '$q', ($templateCache, $timeout, $
                         if (!$scope.filteredOptions || !$scope.filteredOptions.length || !option) {
                             return;
                         }
-                        if (option.offsetTop + option.offsetHeight + marginBottom > dd.scrollTop + dd.offsetHeight){
+                        if (option.offsetTop + option.offsetHeight + marginBottom > dd.scrollTop + dd.offsetHeight) {
                             $scope.$evalAsync(function () {
                                 dd.scrollTop = option.offsetTop + option.offsetHeight + marginBottom - dd.offsetHeight;
                             });
@@ -354,16 +367,16 @@ export default ['$templateCache', '$timeout', '$q', ($templateCache, $timeout, $
                     // 聚焦
                     $scope.open = ($event) => {
                         $scope.hasSetted = false;
-                        switch(+$scope.keep) {
-                        // 清空
-                        case 0:
-                            $scope.searchValue = '';
-                            break;
-                        case 1:
-                            $scope.searchValue = $scope.input;
-                            break;
-                        case 2:
-                        default:
+                        switch (+$scope.keep) {
+                            // 清空
+                            case 0:
+                                $scope.searchValue = '';
+                                break;
+                            case 1:
+                                $scope.searchValue = $scope.input;
+                                break;
+                            case 2:
+                            default:
                         }
                         $scope.filterValue($scope.searchValue, $scope.filterFunc);
                         // 存在游标的可以模拟游标点击操作
@@ -389,6 +402,7 @@ export default ['$templateCache', '$timeout', '$q', ($templateCache, $timeout, $
                             }
                             return false;
                         }
+
                         function onBlur(e) {
                             // e.relatedTarget for Chrome
                             // document.activeElement for IE 11
@@ -417,33 +431,33 @@ export default ['$templateCache', '$timeout', '$q', ($templateCache, $timeout, $
                     // 输入框键盘事件
                     $scope.keydown = function ($event) {
                         switch ($event.keyCode) {
-                        case KEYS.up:
-                            $scope.decrementHighlighted();
-                            $event.preventDefault();
-                            break;
-                        case KEYS.down:
-                            $scope.incrementHighlighted();
-                            $event.preventDefault();
-                            break;
-                        case KEYS.escape:
-                            $scope.highlight(0);
-                            break;
-                        case KEYS.enter:
-                            $scope.set();
-                            $event.preventDefault();
-                            break;
-                        case KEYS.backspace:
-                            break;
-                        case KEYS.left:
-                        case KEYS.right:
-                        case KEYS.shift:
-                        case KEYS.ctrl:
-                        case KEYS.alt:
-                        case KEYS.tab:
-                        case KEYS.leftCmd:
-                        case KEYS.rightCmd:
-                            break;
-                        default:
+                            case KEYS.up:
+                                $scope.decrementHighlighted();
+                                $event.preventDefault();
+                                break;
+                            case KEYS.down:
+                                $scope.incrementHighlighted();
+                                $event.preventDefault();
+                                break;
+                            case KEYS.escape:
+                                $scope.highlight(0);
+                                break;
+                            case KEYS.enter:
+                                $scope.set();
+                                $event.preventDefault();
+                                break;
+                            case KEYS.backspace:
+                                break;
+                            case KEYS.left:
+                            case KEYS.right:
+                            case KEYS.shift:
+                            case KEYS.ctrl:
+                            case KEYS.alt:
+                            case KEYS.tab:
+                            case KEYS.leftCmd:
+                            case KEYS.rightCmd:
+                                break;
+                            default:
                         }
                     };
 
@@ -466,7 +480,9 @@ export default ['$templateCache', '$timeout', '$q', ($templateCache, $timeout, $
                         $scope.showOption = false;
                         // 下一个脏检测循环进行函数调用
                         typeof $scope.onSelect === 'function' && $timeout(() => {
-                            $scope.onSelect({value: $scope.value});
+                            $scope.onSelect({
+                                value: $scope.value
+                            });
                         });
                     };
 
@@ -475,7 +491,9 @@ export default ['$templateCache', '$timeout', '$q', ($templateCache, $timeout, $
                         $scope.bindAttr = $scope.searchValue;
                         $scope.filterValue($scope.searchValue, $scope.filterFunc);
                         typeof $scope.onChange === 'function' && $timeout(() => {
-                            $scope.onChange({value: $scope.bindAttr});
+                            $scope.onChange({
+                                value: $scope.bindAttr
+                            });
                         });
                     };
 
@@ -500,7 +518,7 @@ export default ['$templateCache', '$timeout', '$q', ($templateCache, $timeout, $
 
                     $scope.$watch('filteredOptions', (val, oldVal) => {
                         // dom更改之后才进行首选项高亮
-                        $timeout(()=> {
+                        $timeout(() => {
                             $scope.highlight(0);
                         });
                     });

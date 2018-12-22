@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Angular selector test</title>
+    <script src="https://cdn.staticfile.org/angular.js/1.4.6/angular.min.js"></script>
+    <script src="../dist/bundle.js"></script>
+    <link rel="stylesheet" href="./index.css">
+</head>
+
+<body ng-app="app" ng-controller="myCtrl">
+    <div class="selector" selector total-data="totalData" group-attr="TIPIS" label-attr="DESC"></div>
+    <div class="selector" selector total-data="totalData" debounce="10" label-attr="DESC" type="select" keep="1"></div>
+    <div class="selector" selector total-data="totalData" placeholder="请选择" debounce="10" label-attr="DESC"
+        disable-search="true" type="dropdown" search-value="自定义名字"></div>
+    <div class="selector" selector placeholder="select" type="input"></div>
+</body>
+<script>
+    var app = angular.module('app', ['selector']);
+    app.controller('myCtrl', function ($scope) {
+        $scope.totalData = [{
+                'ID': '1',
+                'TIPIS': 'GroupName1',
+                'DESC': 'name'
+            },
+            {
+                'ID': '2',
+                'TIPIS': 'GroupName1',
+                'DESC': 'name1'
+            },
+            {
+                'ID': '3',
+                'TIPIS': 'GroupName2',
+                'DESC': 'name2'
+            },
+            {
+                'ID': '4',
+                'TIPIS': 'GroupName1',
+                'DESC': 'name3'
+            }
+        ]
+    })
+</script>
+
+</html>
